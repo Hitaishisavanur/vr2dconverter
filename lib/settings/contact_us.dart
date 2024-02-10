@@ -1,3 +1,6 @@
+//change To mail address
+
+import "package:flutter/cupertino.dart";
 import 'package:flutter/material.dart';
 import "package:url_launcher/url_launcher.dart";
 
@@ -9,7 +12,6 @@ class ContactUs extends StatefulWidget {
 }
 
 class _ContactUsState extends State<ContactUs> {
-  final controllerTo = TextEditingController();
   final controllerSubject = TextEditingController();
   final controllerMessage = TextEditingController();
 
@@ -21,10 +23,6 @@ class _ContactUsState extends State<ContactUs> {
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
-            buildTextField(title: 'To', controller: controllerTo, maxlines: 1),
-            const SizedBox(
-              height: 16,
-            ),
             buildTextField(
                 title: 'Subject', controller: controllerSubject, maxlines: 1),
             SizedBox(
@@ -35,8 +33,8 @@ class _ContactUsState extends State<ContactUs> {
             SizedBox(height: 32),
             ElevatedButton(
               onPressed: () => launchEmail(
-                  toEmail: controllerTo.text,
-                  subject: controllerSubject.text,
+                  toEmail: "savanurhitu@gmail.com",
+                  subject: "{VR360 to 2D app}" + "\n" + controllerSubject.text,
                   message: controllerMessage.text),
               child: Text("Send"),
               style: ElevatedButton.styleFrom(
@@ -55,14 +53,26 @@ Future launchEmail(
     {required String toEmail,
     required String subject,
     required String message}) async {
-  final email = Uri.encodeFull(toEmail);
-  final emailSubject = Uri.encodeFull(subject);
-  final emailBody = Uri.encodeFull(message);
+  // final email = Uri.encodeFull(toEmail);
+  // final emailSubject = Uri.encodeFull(subject);
+  // final emailBody = Uri.encodeFull(message);
 
-  final url = "mailto:$email?subject=$emailSubject&body=$emailBody";
+  // final url = "mailto:$email?subject=$emailSubject&body=$emailBody";
 
-  
- 
+  final Uri email = Uri(
+    scheme: 'mailto',
+    path: toEmail,
+    query: 'subject=' +
+        Uri.encodeComponent(subject) +
+        '&body=' +
+        Uri.encodeComponent(message), //add subject and body here
+  );
+
+  if (await canLaunchUrl(email)) {
+    await launchUrl(email);
+  } else {
+    throw 'Could not launch $email';
+  }
 }
 
 buildTextField(

@@ -29,10 +29,10 @@ class Converter extends StatefulWidget {
       required this.aspectRatio});
 
   @override
-  State<Converter> createState() => _ConverterState();
+  State<Converter> createState() => ConverterState();
 }
 
-class _ConverterState extends State<Converter> {
+class ConverterState extends State<Converter> {
   double _progress = 0.0;
   bool _isConverting = false;
 
@@ -74,8 +74,8 @@ class _ConverterState extends State<Converter> {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    _startVideoConversion(
-                        context); // Call _startVideoConversion from here
+                    // startVideoConversion(
+                    //     context); // Call _startVideoConversion from here
                   },
                   child: Text('Start Video Conversion'),
                 );
@@ -92,9 +92,28 @@ class _ConverterState extends State<Converter> {
   //       .pushNamedAndRemoveUntil(savedFilesViewRoute, (route) => false);
   // }
 
-  void _startVideoConversion(BuildContext context) async {
+  Future<void> showLoadingDialog(context) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return LoadingDialog(); // Custom loading dialog
+      },
+    );
+  }
+
+  void startVideoConversion(
+    BuildContext context,
+    videoPath,
+    yaw,
+    pitch,
+    width,
+    height,
+    aspectRatio,
+  ) async {
+    showLoadingDialog(context);
     // Generate a unique file name for the output video
-    final input = File(widget.videoPath).path;
+    //final input = File(widget.videoPath).path;
+    final input = File(videoPath).path;
     final inputFileName = basenameWithoutExtension(input).toString();
 
     // final Directory appDocumentsDirectory =
@@ -112,16 +131,21 @@ class _ConverterState extends State<Converter> {
 
     final outputFileName =
         File('/storage/emulated/0/360VideoConverter/$uniqueFileName').path;
-    final yaw = widget.yaw;
-    final pitch = widget.pitch;
-    final w = widget.width;
-    final h = widget.height;
-    final ratio = widget.aspectRatio;
+    // final yaw = widget.yaw;
+    // final pitch = widget.pitch;
+    // final w = widget.width;
+    // final h = widget.height;
+    // final ratio = widget.aspectRatio;
+    final y = yaw;
+    final p = pitch;
+    final w = width;
+    final h = height;
+    final ratio = aspectRatio;
 
     print("$input,$outputFileName,$yaw,$pitch,$w,$h");
 
     final command =
-        '-i "$input" -vf "scale=$w:-1, v360=equirect:flat:yaw=$yaw:pitch=$pitch" $outputFileName';
+        '-i "$input" -vf "scale=$w:-1, v360=equirect:flat:yaw=$y:pitch=$p" $outputFileName';
     //     'ffmpeg -i $input -vf "v360=equirect:flat:yaw=$yaw:pitch=$pitch, scale=$w:$h "  $outputFileName';https://ffmpeg.org/ffmpeg-filters.html#toc-crop
 //
     await FFmpegKit.executeAsync(command).then((session) async {
@@ -142,7 +166,7 @@ class _ConverterState extends State<Converter> {
         final statistics = await session.getStatistics();
         if (ReturnCode.isSuccess(returnCode)) {
           print("success: $returnCode");
-          Navigator.of(context).pop(converterViewRoute);
+          //Navigator.of(context).pop(converterViewRoute);
           Navigator.of(context).pop(cropperViewRoute);
 
           Navigator.of(context).pushNamed(savedFilesViewRoute);
@@ -182,5 +206,24 @@ class _ConverterState extends State<Converter> {
       print("Error saving output video: $e");
       return e.toString();
     }
+  }
+}
+
+class LoadingDialog extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Converting Video...'),
+          ],
+        ),
+      ),
+    );
   }
 }

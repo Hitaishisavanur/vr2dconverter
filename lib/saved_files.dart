@@ -26,6 +26,7 @@ class _SavedFilesState extends State<SavedFiles> {
   @override
   void initState() {
     super.initState();
+
     loadFiles();
   }
 
@@ -37,6 +38,7 @@ class _SavedFilesState extends State<SavedFiles> {
 
       return files;
     } else {
+      createFolder();
       return [];
     }
   }
@@ -47,6 +49,16 @@ class _SavedFilesState extends State<SavedFiles> {
     setState(() {
       files = fileList;
     });
+  }
+
+  void createFolder() async {
+    final appDirectory = Directory('/storage/emulated/0/360VideoConverter');
+    if (await appDirectory.exists()) {
+    } else {
+      final Directory appDirectory =
+          await Directory('/storage/emulated/0/360VideoConverter')
+              .create(recursive: true);
+    }
   }
 
   void shareSelectedFiles() {
@@ -166,20 +178,157 @@ class _SavedFilesState extends State<SavedFiles> {
           //       : SizedBox.shrink(),
           // ],
         ),
-        body: SingleChildScrollView(
-          child: ListView.builder(
-              itemCount: files.length,
-              itemBuilder: (context, index) {
-                final file = files[index];
-                final isSelected = selectedFiles.contains(file);
-        
-                return FutureBuilder<MediaInformation?>(
-                  future: getMediaInformation(file.path),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Shimmer.fromColors(
-                          baseColor: Colors.grey[300]!,
-                          highlightColor: Colors.grey[100]!,
+        body: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                  itemCount: files.length,
+                  itemBuilder: (context, index) {
+                    final file = files[index];
+                    final isSelected = selectedFiles.contains(file);
+
+                    return FutureBuilder<MediaInformation?>(
+                      future: getMediaInformation(file.path),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: ListTile(
+                                isThreeLine: true,
+                                shape: Border(bottom: BorderSide()),
+                                title: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      basename(file.path),
+                                      overflow: TextOverflow.fade,
+                                      maxLines: 1,
+                                    ),
+                                    SizedBox(height: 8.0),
+                                  ],
+                                ),
+                                contentPadding: EdgeInsets.only(bottom: 8.0),
+                                subtitle: Text(getDuration),
+                                tileColor: isSelected
+                                    ? Color.fromARGB(255, 196, 196,
+                                        196) // Add a background color for selected files
+                                    : null,
+                                onTap: () {
+                                  if (selectedFiles.isNotEmpty) {
+                                    setState(() {
+                                      if (isSelected) {
+                                        selectedFiles.remove(file);
+                                      } else {
+                                        selectedFiles.add(file);
+                                      }
+                                    });
+                                  } else {
+                                    openVideoPlayer(context, file.path);
+                                  }
+                                },
+                                leading: Icon(Icons.play_arrow_rounded,
+                                    size: 65,
+                                    color:
+                                        const Color.fromARGB(255, 0, 167, 167)),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.share),
+                                      onPressed: () {
+                                        Share.shareFiles([file.path]);
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete),
+                                      onPressed: () {
+                                        file.deleteSync();
+                                        files.remove(file);
+                                        setState(() {});
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              )); // Display a loading indicator while fetching information.
+                        } else if (snapshot.hasError) {
+                          return Text('Error: ${snapshot.error}');
+                        } else if (!snapshot.hasData || snapshot.data == null) {
+                          // Handle the case where no information is available.
+                          //         return ListTile(ListView.builder(
+                          // itemCount: files.length,
+                          // itemBuilder: (context, index) {
+                          //   final file = files[index];
+                          //   final isSelected = selectedFiles.contains(file);
+
+                          return ListTile(
+                            shape: Border(bottom: BorderSide()),
+
+                            title: Text(
+                              basename(file.path),
+                              overflow: TextOverflow.fade,
+                              maxLines: 1,
+                            ),
+
+                            tileColor: isSelected
+                                ? Color.fromARGB(255, 196, 196,
+                                    196) // Add a background color for selected files
+                                : null,
+                            //subtitle: Text(getDuration),
+                            onTap: () {
+                              if (selectedFiles.isNotEmpty) {
+                                setState(() {
+                                  if (isSelected) {
+                                    selectedFiles.remove(file);
+                                  } else {
+                                    selectedFiles.add(file);
+                                  }
+                                });
+                              } else {
+                                openVideoPlayer(context, file.path);
+                              }
+                            },
+                            leading: Icon(Icons.play_arrow_rounded,
+                                size: 65,
+                                color: const Color.fromARGB(255, 0, 167, 167)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.share),
+                                  onPressed: () {
+                                    Share.shareFiles([file.path]);
+                                  },
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.delete),
+                                  onPressed: () {
+                                    file.deleteSync();
+                                    files.remove(file);
+                                    setState(() {});
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        final mediaInfo = snapshot.data!;
+                        final seconds = mediaInfo.getDuration();
+                        getDuration = formatDuration(double.parse(seconds!));
+
+                        return GestureDetector(
+                          onLongPress: () {
+                            setState(() {
+                              if (isSelected) {
+                                selectedFiles.remove(file);
+                              } else {
+                                selectedFiles.add(file);
+                              }
+                            });
+                          },
+                          onTap: () {},
                           child: ListTile(
                             isThreeLine: true,
                             shape: Border(bottom: BorderSide()),
@@ -236,144 +385,13 @@ class _SavedFilesState extends State<SavedFiles> {
                                 ),
                               ],
                             ),
-                          )); // Display a loading indicator while fetching information.
-                    } else if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
-                    } else if (!snapshot.hasData || snapshot.data == null) {
-                      // Handle the case where no information is available.
-                      //         return ListTile(ListView.builder(
-                      // itemCount: files.length,
-                      // itemBuilder: (context, index) {
-                      //   final file = files[index];
-                      //   final isSelected = selectedFiles.contains(file);
-        
-                      return ListTile(
-                        shape: Border(bottom: BorderSide()),
-        
-                        title: Text(
-                          basename(file.path),
-                          overflow: TextOverflow.fade,
-                          maxLines: 1,
-                        ),
-        
-                        tileColor: isSelected
-                            ? Color.fromARGB(255, 196, 196,
-                                196) // Add a background color for selected files
-                            : null,
-                        //subtitle: Text(getDuration),
-                        onTap: () {
-                          if (selectedFiles.isNotEmpty) {
-                            setState(() {
-                              if (isSelected) {
-                                selectedFiles.remove(file);
-                              } else {
-                                selectedFiles.add(file);
-                              }
-                            });
-                          } else {
-                            openVideoPlayer(context, file.path);
-                          }
-                        },
-                        leading: Icon(Icons.play_arrow_rounded,
-                            size: 65,
-                            color: const Color.fromARGB(255, 0, 167, 167)),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.share),
-                              onPressed: () {
-                                Share.shareFiles([file.path]);
-                              },
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.delete),
-                              onPressed: () {
-                                file.deleteSync();
-                                files.remove(file);
-                                setState(() {});
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                    final mediaInfo = snapshot.data!;
-                    final seconds = mediaInfo.getDuration();
-                    getDuration = formatDuration(double.parse(seconds!));
-        
-                    return GestureDetector(
-                      onLongPress: () {
-                        setState(() {
-                          if (isSelected) {
-                            selectedFiles.remove(file);
-                          } else {
-                            selectedFiles.add(file);
-                          }
-                        });
+                          ),
+                        );
                       },
-                      onTap: () {},
-                      child: ListTile(
-                        isThreeLine: true,
-                        shape: Border(bottom: BorderSide()),
-                        title: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              basename(file.path),
-                              overflow: TextOverflow.fade,
-                              maxLines: 1,
-                            ),
-                            SizedBox(height: 8.0),
-                          ],
-                        ),
-                        contentPadding: EdgeInsets.only(bottom: 8.0),
-                        subtitle: Text(getDuration),
-                        tileColor: isSelected
-                            ? Color.fromARGB(255, 196, 196,
-                                196) // Add a background color for selected files
-                            : null,
-                        onTap: () {
-                          if (selectedFiles.isNotEmpty) {
-                            setState(() {
-                              if (isSelected) {
-                                selectedFiles.remove(file);
-                              } else {
-                                selectedFiles.add(file);
-                              }
-                            });
-                          } else {
-                            openVideoPlayer(context, file.path);
-                          }
-                        },
-                        leading: Icon(Icons.play_arrow_rounded,
-                            size: 65,
-                            color: const Color.fromARGB(255, 0, 167, 167)),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.share),
-                              onPressed: () {
-                                Share.shareFiles([file.path]);
-                              },
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.delete),
-                              onPressed: () {
-                                file.deleteSync();
-                                files.remove(file);
-                                setState(() {});
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
                     );
-                  },
-                );
-              }),
+                  }),
+            ),
+          ],
         ));
   }
 }

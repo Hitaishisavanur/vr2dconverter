@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import 'package:video_player_extra/video_player_extra.dart';
+import 'package:vr2dconverter/2d_converter.dart/ffmpeg_conversion.dart';
 
 import 'package:vr2dconverter/routes/routes.dart';
 
@@ -36,6 +37,7 @@ class _CropperState extends State<Cropper> {
 
     _controller = VideoPlayerController.file(
       widget.videoFile,
+
       //'https://videojs-vr.netlify.app/samples/eagle-360.mp4',
       videoPlayerOptions: VideoPlayerOptions(
         mixWithOthers: true,
@@ -108,8 +110,25 @@ class _CropperState extends State<Cropper> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          converter();
+        onPressed: () async {
+          await converter();
+          final videoPath = widget.videoFile.path;
+          final height = heights;
+
+          final width = widths;
+          final yaw = cy;
+          final pitch = cp;
+          aspectRatio = aspectRatio;
+          // converter();
+          ConverterState().startVideoConversion(
+            context,
+            videoPath,
+            yaw,
+            pitch,
+            width,
+            height,
+            aspectRatio,
+          );
         },
         icon: Icon(Icons.done),
         label: Text("convert"),
@@ -117,7 +136,7 @@ class _CropperState extends State<Cropper> {
     );
   }
 
-  void converter() {
+  Future converter() async {
     if (aspectRatio == 1 / 1) {
       setState(() {
         aspectRatio = 16 / 9;
@@ -129,14 +148,17 @@ class _CropperState extends State<Cropper> {
     });
     final video = widget.videoFile.path;
     print(video);
-    Navigator.of(context).pushNamed(converterViewRoute, arguments: {
-      'videoPath': widget.videoFile.path,
-      'height': heights ,
-      'width': widths ,
-      'yaw': cy,
-      'pitch': cp,
-      'aspectRatio': aspectRatio,
-    });
+    // Navigator.of(context).pushNamed(
+    //   converterViewRoute,
+    //   arguments: {
+    //     'videoPath': widget.videoFile.path,
+    //     'height': heights,
+    //     'width': widths,
+    //     'yaw': cy,
+    //     'pitch': cp,
+    //     'aspectRatio': aspectRatio,
+    //   },
+    // );
   }
 }
 
@@ -270,5 +292,6 @@ class _ControlsOverlay extends StatelessWidget {
     );
   }
 }
+
 //ffmpeg -i input360.mp4 -vf "v360=equirect:yaw=YAW:pitch=PITCH:out_w=WIDTH:out_h=HEIGHT" -c:v libx264 -crf 18 -preset fast output2d.mp4
 

@@ -1,5 +1,11 @@
+// change share app link.
+
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
+
 import 'package:vr2dconverter/settings/contact_us.dart';
+import 'package:vr2dconverter/settings/how_to_use.dart';
+import 'package:vr2dconverter/settings/privacy_policy.dart';
 
 class Settings extends StatefulWidget {
   const Settings({Key? key});
@@ -19,7 +25,7 @@ class _SettingsState extends State<Settings> {
             children: [
               ListTile(
                 title: Text(
-                  "Buy Premium Version",
+                  "Buy Ad Free Version",
                   overflow: TextOverflow.fade,
                 ),
                 onTap: () {},
@@ -29,12 +35,16 @@ class _SettingsState extends State<Settings> {
                   "How To Use",
                   overflow: TextOverflow.fade,
                 ),
-                onTap: () {},
+                onTap: () {
+                  Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (context) => HowTo()));
+                },
               ),
               ListTile(
-                title: Text("Rate Us"),
-                onTap: () {},
-              ),
+                  title: Text("Share the app"),
+                  onTap: () {
+                    Share.share("Download the app: www.google.com");
+                  }),
               ListTile(
                 title: Text("Contact Us"),
                 onTap: () {
@@ -44,7 +54,10 @@ class _SettingsState extends State<Settings> {
               ),
               ListTile(
                 title: Text("Privacy Policy"),
-                onTap: () {},
+                onTap: () {
+                  Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => PrivacyPolicy()));
+                },
               ),
             ],
           ),
